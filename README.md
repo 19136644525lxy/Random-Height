@@ -15,6 +15,7 @@
 - Minecraft 1.20.1
 - Forge 47.4.20+
 - Pehkui 3.8.2+
+- Cloth Config API 11.1.136+
 
 ## 指令
 
