@@ -1,44 +1,58 @@
 # Random Height Mod
 
-一个 Minecraft Forge 模组，随机改变玩家身高。
+A Minecraft Forge mod that randomly changes player height.
 
-## 功能特性
+## Features
 
-- 自动定时随机切换玩家身高
-- 可配置的切换间隔时间
-- 可配置的身高缩放范围
-- 切换倒计时提醒
-- 完整的指令系统配置
+- Automatically switches player height at configurable intervals
+- Configurable height scale range
+- Countdown reminder before height change
+- Complete command system for configuration
+- Cloth Config GUI support
+- Multi-language support (English/Chinese)
+- Welcome messages on player join
 
-## 依赖
+## Dependencies
 
 - Minecraft 1.20.1
 - Forge 47.4.20+
 - Pehkui 3.8.2+
 - Cloth Config API 11.1.136+
 
-## 指令
+## Commands
 
-| 指令 | 说明 |
-|------|------|
-| `/rh enable <true/false>` | 启用/禁用随机身高功能 |
-| `/rh interval <秒数>` | 设置切换间隔（10-3600秒） |
-| `/rh scale <最小值> <最大值>` | 设置缩放范围（0.1-5.0） |
-| `/rh scale countdown <true/false>` | 启用/禁用倒计时提醒 |
-| `/rh scalecountdown_time <秒数>` | 设置倒计时时间（1-60秒） |
-| `/rh scale force` | 强制立即切换身高 |
-| `/rh scale config` | 查看当前配置 |
+| Command | Description |
+|---------|-------------|
+| `/rh enable <true/false>` | Enable/disable random height feature |
+| `/rh interval <seconds>` | Set change interval (10-3600 seconds) |
+| `/rh scale <min> <max>` | Set scale range (0.1-5.0) |
+| `/rh countdown <true/false>` | Enable/disable countdown reminder |
+| `/rh countdown_time <seconds>` | Set countdown time (1-60 seconds) |
+| `/rh force` | Force immediate height change |
+| `/rh config` | View current configuration |
 
-## 安装
+## Configuration
 
-1. 安装 Forge 1.20.1
-2. 安装 Pehkui 模组
-3. 将本模组放入 `mods` 文件夹
+The mod can be configured via:
+1. In-game commands
+2. Cloth Config GUI (Mods menu -> Random Height -> Config)
+3. Config file: `.minecraft/config/randomheight.toml`
 
-## 许可协议
+## Installation
 
-MIT License - 查看 [LICENSE](LICENSE) 文件
+1. Install Forge 1.20.1
+2. Install Pehkui mod
+3. Install Cloth Config API
+4. Place this mod in the `mods` folder
 
-## 作者
+## License
+
+MIT License - See [LICENSE](LICENSE) file
+
+## Author
 
 Yifei
+
+## Project Link
+
+https://github.com/19136644525lxy/Random-Height
