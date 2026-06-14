@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import virtuoel.pehkui.api.ScaleData;
 import virtuoel.pehkui.api.ScaleTypes;
+import yifei.randomheight.util.HeightRandomizer;
 
 import java.util.Random;
 
@@ -15,6 +16,7 @@ public class ScaleManager {
     
     private static Boolean pehkuiAvailable = null;
     private static final Random random = new Random();
+    private static HeightRandomizer heightRandomizer;
 
     private static void checkPehkui() {
         if (pehkuiAvailable != null) return;
@@ -49,7 +51,10 @@ public class ScaleManager {
     }
 
     public static float getRandomScale(double min, double max) {
-        return (float) (min + (max - min) * random.nextDouble());
+        if (heightRandomizer == null) {
+            heightRandomizer = new HeightRandomizer(min, max);
+        }
+        return heightRandomizer.next();
     }
 
     public static void setPlayerScale(LocalPlayer player, float scale) {

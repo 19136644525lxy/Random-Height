@@ -23,10 +23,10 @@
 | `/rh enable <true/false>` | 启用/禁用随机身高功能 |
 | `/rh interval <秒数>` | 设置切换间隔（10-3600秒） |
 | `/rh scale <最小值> <最大值>` | 设置缩放范围（0.1-5.0） |
-| `/rh countdown <true/false>` | 启用/禁用倒计时提醒 |
-| `/rh countdown_time <秒数>` | 设置倒计时时间（1-60秒） |
-| `/rh force` | 强制立即切换身高 |
-| `/rh config` | 查看当前配置 |
+| `/rh scale countdown <true/false>` | 启用/禁用倒计时提醒 |
+| `/rh scalecountdown_time <秒数>` | 设置倒计时时间（1-60秒） |
+| `/rh scale force` | 强制立即切换身高 |
+| `/rh scale config` | 查看当前配置 |
 
 ## 安装
 
