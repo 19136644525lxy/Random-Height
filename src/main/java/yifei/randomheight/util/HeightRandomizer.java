@@ -9,10 +9,12 @@ public class HeightRandomizer {
     private final double minDifference;
     
     private float lastValue = -1;
-    private int consecutiveLargeCount = 0;
+    private float[] recentValues = new float[5];
+    private int recentIndex = 0;
+    private float forcedSmallNext = 0;
     
     public HeightRandomizer(double minScale, double maxScale) {
-        this(minScale, maxScale, 0.8);
+        this(minScale, maxScale, 0.5);
     }
     
     public HeightRandomizer(double minScale, double maxScale, double minDifference) {
@@ -24,59 +26,105 @@ public class HeightRandomizer {
     public float next() {
         float result;
         
-        // 规则2：连续两次1.x+后，下一次必须为0.x
-        if (consecutiveLargeCount >= 2) {
-            result = generateFromSmallRange();
-            consecutiveLargeCount = 0;
+        // 强制小值
+        if (forcedSmallNext > 0) {
+            result = generateRandomInRange(minScale, forcedSmallNext);
+            forcedSmallNext = 0;
         } else {
-            // 规则1+3：随机选择区间
-            if (random.nextBoolean()) {
-                result = generateFromSmallRange();
-                consecutiveLargeCount = 0;
-            } else {
-                result = generateFromLargeRange();
-                consecutiveLargeCount++;
-            }
-            
-            // 确保与上次的差值 >= minDifference
-            result = ensureMinDifference(result);
+            // 真正的随机选择
+            result = generateFullyRandom();
         }
         
+        // 确保与历史值有足够差异
+        result = ensureDifferenceFromHistory(result);
+        
+        // 记录历史
+        recentValues[recentIndex] = result;
+        recentIndex = (recentIndex + 1) % recentValues.length;
         lastValue = result;
+        
         return result;
     }
     
-    private float generateFromSmallRange() {
-        return (float) (minScale + (1.0 - minScale) * random.nextDouble());
+    private float generateFullyRandom() {
+        // 真正的随机：在整个范围内随机
+        double range = maxScale - minScale;
+        double rand = random.nextDouble();
+        
+        // 使用指数分布让随机更分散
+        double expRand = Math.pow(rand, 0.7); // 偏向两端
+        return (float) (minScale + expRand * range);
     }
     
-    private float generateFromLargeRange() {
-        return (float) (1.0 + (maxScale - 1.0) * random.nextDouble());
+    private float generateRandomInRange(double min, double max) {
+        double range = max - min;
+        return (float) (min + random.nextDouble() * range);
     }
     
-    private float ensureMinDifference(float value) {
-        if (lastValue == -1) {
-            return value;
+    private float ensureDifferenceFromHistory(float value) {
+        // 检查与所有历史值的差值
+        float minDiff = Float.MAX_VALUE;
+        for (float recent : recentValues) {
+            if (recent > 0) {
+                float diff = Math.abs(value - recent);
+                minDiff = Math.min(minDiff, diff);
+            }
         }
         
-        float diff = Math.abs(value - lastValue);
-        if (diff < minDifference) {
-            // 差值太小，需要调整
-            if (value >= 1.0) {
-                // 目标是大值，向上调整到满足差值
-                value = (float) (lastValue + minDifference);
-                if (value > maxScale) {
-                    // 超出范围，向下调整
-                    value = (float) Math.max(1.0, lastValue - minDifference);
-                }
-            } else {
-                // 目标是0.x，向下调整到满足差值
-                value = (float) (lastValue - minDifference);
-                if (value < minScale) {
-                    // 超出范围，向上调整
-                    value = (float) Math.min(1.0, lastValue + minDifference);
+        // 如果与某个历史值太接近，需要调整
+        if (minDiff < minDifference && minDiff != Float.MAX_VALUE) {
+            // 找到最接近的历史值
+            float closest = Float.MAX_VALUE;
+            for (float recent : recentValues) {
+                if (recent > 0 && Math.abs(value - recent) == minDiff) {
+                    closest = recent;
+                    break;
                 }
             }
+            
+            // 选择远离的方向
+            if (value < closest) {
+                value = (float) Math.min(closest - minDifference, maxScale);
+            } else {
+                value = (float) Math.max(closest + minDifference, minScale);
+            }
+            
+            // 再次验证
+            if (value > maxScale) {
+                value = (float) maxScale;
+            } else if (value < minScale) {
+                value = (float) minScale;
+            }
+        }
+        
+        // 防止连续接近的极值
+        if (lastValue > 0) {
+            float diff = Math.abs(value - lastValue);
+            if (diff < minDifference * 0.7) {
+                // 翻转方向
+                if (value < 1.0 && lastValue < 1.0) {
+                    value = (float) (1.0 + (maxScale - 1.0) * random.nextDouble());
+                    forcedSmallNext = 0;
+                } else if (value >= 1.0 && lastValue >= 1.0) {
+                    value = (float) (minScale + (1.0 - minScale) * random.nextDouble());
+                    forcedSmallNext = 0;
+                }
+            }
+        }
+        
+        // 防止连续3个值都偏向同一方向
+        int smallCount = 0, largeCount = 0;
+        for (float recent : recentValues) {
+            if (recent > 0) {
+                if (recent < 1.0) smallCount++;
+                else largeCount++;
+            }
+        }
+        
+        if (smallCount >= 3) {
+            forcedSmallNext = 0;
+        } else if (largeCount >= 3) {
+            forcedSmallNext = (float) (minScale + (1.0 - minScale) * 0.5);
         }
         
         return value;

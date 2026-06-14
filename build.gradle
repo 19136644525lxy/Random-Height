@@ -59,11 +59,16 @@ repositories {
     flatDir {
         dir 'libs'
     }
+    maven {
+        name = "TerraformersMC"
+        url = "https://maven.terraformersmc.com/releases/"
+    }
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     compileOnly files("${project.projectDir}/libs/Pehkui-3.8.2+1.20.1-forge.jar")
+    compileOnly files("${project.projectDir}/libs/cloth-config-11.1.136-forge.jar")
 }
 
 processResources {

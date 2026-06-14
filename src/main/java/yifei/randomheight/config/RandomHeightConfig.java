@@ -1,79 +1,107 @@
 package yifei.randomheight.config;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.minecraftforge.common.ForgeConfigSpec;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
 public class RandomHeightConfig {
-    public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-    public static final ForgeConfigSpec SPEC;
+    private static final String CONFIG_FILE_NAME = "randomheight.json";
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    public static final ForgeConfigSpec.IntValue INTERVAL_SECONDS;
-    public static final ForgeConfigSpec.DoubleValue MIN_SCALE;
-    public static final ForgeConfigSpec.DoubleValue MAX_SCALE;
-    public static final ForgeConfigSpec.BooleanValue ENABLED;
-    public static final ForgeConfigSpec.BooleanValue ENABLE_COUNTDOWN;
-    public static final ForgeConfigSpec.IntValue COUNTDOWN_SECONDS;
+    private static int intervalSeconds = 180;
+    private static double minScale = 0.1;
+    private static double maxScale = 5.0;
+    private static boolean enabled = true;
+    private static boolean countdownEnabled = true;
+    private static int countdownSeconds = 10;
 
-    static {
-        BUILDER.comment("Random Height Mod Configuration");
-
-        INTERVAL_SECONDS = BUILDER
-            .comment("随机身高切换间隔时间（秒）")
-            .defineInRange("interval_seconds", 180, 10, 3600);
-
-        MIN_SCALE = BUILDER
-            .comment("最小缩放比例")
-            .defineInRange("min_scale", 0.5, 0.1, 2.0);
-
-        MAX_SCALE = BUILDER
-            .comment("最大缩放比例")
-            .defineInRange("max_scale", 2.0, 0.1, 5.0);
-
-        ENABLED = BUILDER
-            .comment("是否启用随机身高功能")
-            .define("enabled", true);
-
-        ENABLE_COUNTDOWN = BUILDER
-            .comment("是否启用切换倒计时提示")
-            .define("enable_countdown", true);
-
-        COUNTDOWN_SECONDS = BUILDER
-            .comment("切换前倒计时时间（秒）")
-            .defineInRange("countdown_seconds", 10, 1, 60);
-
-        SPEC = BUILDER.build();
+    public static void loadFromFile() {
+        File configFile = getConfigFile();
+        if (configFile.exists()) {
+            try (FileReader reader = new FileReader(configFile)) {
+                JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+                
+                if (json.has("interval_seconds")) {
+                    intervalSeconds = json.get("interval_seconds").getAsInt();
+                }
+                if (json.has("min_scale")) {
+                    minScale = json.get("min_scale").getAsDouble();
+                }
+                if (json.has("max_scale")) {
+                    maxScale = json.get("max_scale").getAsDouble();
+                }
+                if (json.has("enabled")) {
+                    enabled = json.get("enabled").getAsBoolean();
+                }
+                if (json.has("countdown_enabled")) {
+                    countdownEnabled = json.get("countdown_enabled").getAsBoolean();
+                }
+                if (json.has("countdown_seconds")) {
+                    countdownSeconds = json.get("countdown_seconds").getAsInt();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            saveToFile();
+        }
     }
 
-    private static int intervalSeconds;
-    private static double minScale;
-    private static double maxScale;
-    private static boolean enabled;
-    private static boolean enableCountdown;
-    private static int countdownSeconds;
+    public static void saveToFile() {
+        File configFile = getConfigFile();
+        try (FileWriter writer = new FileWriter(configFile)) {
+            JsonObject json = new JsonObject();
+            json.addProperty("interval_seconds", intervalSeconds);
+            json.addProperty("min_scale", minScale);
+            json.addProperty("max_scale", maxScale);
+            json.addProperty("enabled", enabled);
+            json.addProperty("countdown_enabled", countdownEnabled);
+            json.addProperty("countdown_seconds", countdownSeconds);
+            GSON.toJson(json, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-    public static void loadConfig() {
-        intervalSeconds = INTERVAL_SECONDS.get();
-        minScale = MIN_SCALE.get();
-        maxScale = MAX_SCALE.get();
-        enabled = ENABLED.get();
-        enableCountdown = ENABLE_COUNTDOWN.get();
-        countdownSeconds = COUNTDOWN_SECONDS.get();
+    private static File getConfigFile() {
+        File gameDir = new File(".");
+        File configDir = new File(gameDir, "config");
+        if (!configDir.exists()) {
+            configDir.mkdirs();
+        }
+        return new File(configDir, CONFIG_FILE_NAME);
     }
 
     public static int getIntervalSeconds() { return intervalSeconds; }
-    public static void setIntervalSeconds(int value) { intervalSeconds = value; }
+    public static void setIntervalSeconds(int value) { 
+        intervalSeconds = Math.max(10, Math.min(3600, value)); 
+    }
 
     public static double getMinScale() { return minScale; }
-    public static void setMinScale(double value) { minScale = value; }
+    public static void setMinScale(double value) { 
+        minScale = Math.max(0.1, Math.min(5.0, value)); 
+    }
 
     public static double getMaxScale() { return maxScale; }
-    public static void setMaxScale(double value) { maxScale = value; }
+    public static void setMaxScale(double value) { 
+        maxScale = Math.max(0.1, Math.min(5.0, value)); 
+    }
 
     public static boolean isEnabled() { return enabled; }
     public static void setEnabled(boolean value) { enabled = value; }
 
-    public static boolean isCountdownEnabled() { return enableCountdown; }
-    public static void setCountdownEnabled(boolean value) { enableCountdown = value; }
+    public static boolean isCountdownEnabled() { return countdownEnabled; }
+    public static void setCountdownEnabled(boolean value) { countdownEnabled = value; }
 
     public static int getCountdownSeconds() { return countdownSeconds; }
-    public static void setCountdownSeconds(int value) { countdownSeconds = value; }
+    public static void setCountdownSeconds(int value) { 
+        countdownSeconds = Math.max(1, Math.min(60, value)); 
+    }
 }

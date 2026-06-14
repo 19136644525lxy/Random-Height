@@ -1,12 +1,17 @@
 package yifei.randomheight.manager;
 
-import net.minecraft.client.player.LocalPlayer;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.fml.ModList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import virtuoel.pehkui.api.ScaleData;
-import virtuoel.pehkui.api.ScaleTypes;
 import yifei.randomheight.util.HeightRandomizer;
 
 import java.util.Random;
@@ -31,14 +36,8 @@ public class ScaleManager {
             }
             
             LOGGER.info("[RandomHeight] Pehkui mod is loaded according to ModList");
-            
-            ScaleTypes.BASE.getClass();
-            LOGGER.info("[RandomHeight] Pehkui API detected successfully!");
             pehkuiAvailable = true;
             
-        } catch (NoClassDefFoundError e) {
-            LOGGER.warn("[RandomHeight] PehkuiApi class not found (NoClassDefFoundError): " + e.getMessage());
-            pehkuiAvailable = false;
         } catch (Exception e) {
             LOGGER.warn("[RandomHeight] Error detecting Pehkui: " + e.getClass().getName() + " - " + e.getMessage());
             pehkuiAvailable = false;
@@ -57,7 +56,7 @@ public class ScaleManager {
         return heightRandomizer.next();
     }
 
-    public static void setPlayerScale(LocalPlayer player, float scale) {
+    public static void setPlayerScale(ServerPlayer player, float scale) {
         checkPehkui();
         
         if (!pehkuiAvailable) {
@@ -66,19 +65,51 @@ public class ScaleManager {
         }
 
         try {
-            ScaleData baseScaleData = ScaleTypes.BASE.getScaleData(player);
-            ScaleData widthScaleData = ScaleTypes.WIDTH.getScaleData(player);
-            ScaleData heightScaleData = ScaleTypes.HEIGHT.getScaleData(player);
-            
-            baseScaleData.setScale(scale);
-            widthScaleData.setScale(scale);
-            heightScaleData.setScale(scale);
-            
-            player.sendSystemMessage(Component.translatable("randomheight.scale_changed", scale));
-            
+            boolean success = executePehkuiCommands(player, scale);
+            if (success) {
+                player.sendSystemMessage(Component.translatable("randomheight.scale_changed", scale));
+            }
         } catch (Exception e) {
             LOGGER.error("[RandomHeight] Error setting scale: " + e.getMessage(), e);
             player.sendSystemMessage(Component.translatable("randomheight.set_scale_failed", e.getMessage()));
+        }
+    }
+    
+    private static boolean executePehkuiCommands(ServerPlayer player, float scale) {
+        String widthCommand = "scale set pehkui:width " + scale + " @s";
+        String heightCommand = "scale set pehkui:height " + scale + " @s";
+        
+        LOGGER.info("[RandomHeight] Executing commands: /" + widthCommand + ", /" + heightCommand);
+        
+        try {
+            executeCommand(player, widthCommand);
+            executeCommand(player, heightCommand);
+            LOGGER.info("[RandomHeight] Commands executed successfully");
+            return true;
+        } catch (Exception e) {
+            LOGGER.error("[RandomHeight] Failed to execute commands: " + e.getMessage(), e);
+            return false;
+        }
+    }
+    
+    private static void executeCommand(ServerPlayer player, String command) throws Exception {
+        try {
+            MinecraftServer server = player.getServer();
+            if (server == null) {
+                throw new RuntimeException("Server is null");
+            }
+            
+            CommandSourceStack source = player.createCommandSourceStack();
+            CommandDispatcher<CommandSourceStack> dispatcher = server.getCommands().getDispatcher();
+            
+            ParseResults<CommandSourceStack> parseResults = dispatcher.parse(command, source);
+            dispatcher.execute(parseResults);
+            
+            LOGGER.info("[RandomHeight] Command executed successfully: /" + command);
+            
+        } catch (Exception e) {
+            LOGGER.error("[RandomHeight] Failed to execute command: " + e.getMessage());
+            throw e;
         }
     }
 }

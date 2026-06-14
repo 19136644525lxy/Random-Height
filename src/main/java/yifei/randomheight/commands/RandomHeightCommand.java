@@ -12,6 +12,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 
 public class RandomHeightCommand {
     private static final String YES_KEY = "randomheight.yes";
@@ -94,7 +95,15 @@ public class RandomHeightCommand {
             context.getSource().sendFailure(Component.translatable("randomheight.pehkui_not_installed"));
             return 0;
         }
-        TickHandler.forceApplyRandomScale();
+        
+        ServerPlayer player = context.getSource().getPlayer();
+        if (player != null) {
+            TickHandler.forceApplyRandomScale(player);
+        } else {
+            context.getSource().sendFailure(Component.translatable("randomheight.error.player_only"));
+            return 0;
+        }
+        
         return 1;
     }
 
@@ -102,7 +111,7 @@ public class RandomHeightCommand {
         Component header = Component.translatable("randomheight.config.header");
         Component enabled = Component.translatable("randomheight.config.enabled", 
             RandomHeightConfig.isEnabled() ? Component.translatable(YES_KEY).getString() : Component.translatable(NO_KEY).getString());
-        Component interval = Component.translatable("randomheight.config.interval", RandomHeightConfig.getIntervalSeconds());
+        Component interval = Component.translatable("randomheight.config.show_interval", RandomHeightConfig.getIntervalSeconds());
         Component minScale = Component.translatable("randomheight.config.min_scale", RandomHeightConfig.getMinScale());
         Component maxScale = Component.translatable("randomheight.config.max_scale", RandomHeightConfig.getMaxScale());
         Component countdown = Component.translatable("randomheight.config.countdown", 
